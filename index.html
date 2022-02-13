@@ -1,0 +1,113 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="/script.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="map"></div>
+
+</body>
+<script>
+    var map_init = L.map('map', {
+        center: [9.0820, 8.6753],
+        zoom: 8
+    });
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map_init);
+
+    var greenIcon = L.icon({
+        iconUrl: 'satellite.png',
+        shadowUrl: 'satellite-shadow.png',
+
+        iconSize: [80, 80], // size of the icon
+        shadowSize: [40, 40], // size of the shadow
+        iconAnchor: [40, 40], // point of the icon which will correspond to marker's location
+        shadowAnchor: [4, 62], // the same for the shadow
+        popupAnchor: [-3, -76] // point from which the popup should open relative to the iconAnchor
+    });
+
+    var transMarker = L.icon({
+        iconUrl: 'dsadsa.png',
+        shadowUrl: 'dsadsa.png',
+
+        iconSize: [80, 80], // size of the icon
+        shadowSize: [40, 40], // size of the shadow
+        iconAnchor: [40, 40], // point of the icon which will correspond to marker's location
+        shadowAnchor: [4, 62], // the same for the shadow
+        popupAnchor: [-3, -76] // point from which the popup should open relative to the iconAnchor
+    });
+
+    var marker = L.marker([9.0820, 8.6753], {icon: greenIcon}).addTo(map_init);
+    var Basemaps = {
+        "OSM": osm
+    }
+    var Overlaymaps = {
+        "Marker": marker
+    }
+    L.control.layers(Basemaps, Overlaymaps).addTo(map_init);
+
+
+    var lastlon = new Array();
+    var lastlat = new Array();
+    var latlngs = new Array();
+
+    function moveISS() {
+        $.getJSON('http://api.open-notify.org/iss-now.json?callback=?', function (data) {
+            var lat = data['iss_position']['latitude'];
+            var lon = data['iss_position']['longitude'];
+
+            // See leaflet docs for setting up icons and map layers
+            // The update to the map is done here:
+            lastlon.push(lon);
+            lastlat.push(lat);
+            console.log(lastlon);
+            if(lastlon.length && lastlat.length >  1){
+                var newMarker = L.circleMarker([lastlat[lastlat.length-2], lastlon[lastlon.length-2]], {radius: 1}).addTo(map_init);
+                latlngs.push(newMarker.getLatLng());
+                console.log(latlngs);
+            }
+
+            if(latlngs.length > 1){
+                var polyline = L.polyline(latlngs, {color: 'red'}).addTo(map_init);
+            }
+
+            marker.setLatLng([lat, lon]);
+            // isscirc.setLatLng([lat, lon]);
+
+            
+            map_init.panTo([lat, lon], animate = true);
+
+        });
+        setTimeout(moveISS, 5000);
+    }
+
+    moveISS();
+
+</script>
+
+</html>
